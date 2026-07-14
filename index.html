@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>张家界国家森林公园 · 智慧文旅监控平台</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f0;
+    --surface: #ffffff;
+    --surface-alt: #f8faf5;
+    --border: #e2e8da;
+    --text: #2d3a24;
+    --text-secondary: #6b7a5e;
+    --text-muted: #9aab8c;
+    --emerald: #2d8a4e;
+    --emerald-light: #e8f5e9;
+    --emerald-glow: rgba(45,138,78,.12);
+    --jade: #059669;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --sky: #0ea5e9;
+    --sky-light: #e0f2fe;
+    --rose: #e11d48;
+    --rose-light: #ffe4e6;
+    --slate: #475569;
+    --radius-sm: 10px;
+    --radius: 16px;
+    --radius-lg: 20px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.06);
+    --shadow: 0 4px 24px rgba(0,0,0,.05), 0 1px 4px rgba(0,0,0,.04);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.04);
+  }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Header ---- */
+  .header {
+    background: linear-gradient(135deg, #1a3c2a 0%, #2d5a3e 40%, #1e4d2e 100%);
+    padding: 0 32px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(26,60,42,.25);
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: .5px;
+  }
+  .header-brand .icon {
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,.14);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    color: rgba(255,255,255,.85);
+    font-size: 14px;
+  }
+  .header-meta .dot {
+    width: 8px; height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(74,222,128,.6);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1) }
+    50% { opacity:.55; transform:scale(1.5) }
+  }
+
+  /* ---- Main Container ---- */
+  .main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 28px 32px 48px;
+    display: grid;
+    gap: 24px;
+  }
+
+  /* ---- Stat Cards Row ---- */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    transition: box-shadow .25s, transform .25s;
+  }
+  .stat-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  .stat-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .stat-icon.green  { background: var(--emerald-light); color: var(--emerald) }
+  .stat-icon.amber  { background: var(--amber-light);  color: var(--amber)  }
+  .stat-icon.sky    { background: var(--sky-light);    color: var(--sky)    }
+  .stat-icon.rose   { background: var(--rose-light);   color: var(--rose)   }
+  .stat-info .label { font-size:13px; color:var(--text-muted); margin-bottom:2px; font-weight:500 }
+  .stat-info .value { font-size:28px; font-weight:700; color:var(--text); letter-spacing:-.5px; line-height: 1.1 }
+  .stat-info .sub   { font-size:11px; color:var(--text-muted); margin-top:3px }
+  .stat-info .sub.up { color:var(--emerald) }
+  .stat-info .sub.down { color:var(--rose) }
+
+  /* ---- Chart Card ---- */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+  }
+  .card-header h2 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-header h2 .badge {
+    font-size:11px;
+    font-weight:600;
+    padding:3px 10px;
+    border-radius: 20px;
+    background: var(--emerald-light);
+    color: var(--emerald);
+  }
+  .card-body { padding: 20px 16px 12px }
+  .chart-box { width:100%; height: 380px }
+
+  /* ---- Two-Column Row ---- */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  /* ---- Entry/Exit Sim Panel ---- */
+  .flow-panel .card-body { padding: 20px 28px 24px }
+  .flow-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .flow-item {
+    background: var(--surface-alt);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    text-align: center;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .flow-item .flow-label {
+    font-size: 13px; color: var(--text-secondary); font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .flow-item .flow-number {
+    font-size: 44px; font-weight: 800; letter-spacing: -1px;
+    transition: color .3s;
+  }
+  .flow-item.in  .flow-number { color: var(--emerald) }
+  .flow-item.out .flow-number { color: var(--rose) }
+  .flow-item .flow-unit { font-size:13px; color:var(--text-muted); margin-top:2px }
+  .flow-item .flow-bar-wrap {
+    margin-top: 14px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .flow-item .flow-bar {
+    height: 100%; border-radius: 3px;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+  .flow-item.in  .flow-bar { background: linear-gradient(90deg, #2d8a4e, #4ade80) }
+  .flow-item.out .flow-bar { background: linear-gradient(90deg, #e11d48, #fb7185) }
+  .flow-status {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .flow-status .live-dot {
+    width:7px; height:7px; border-radius:50%;
+    background: var(--emerald);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  /* ---- News Panel ---- */
+  .news-panel .card-body { padding: 12px 0 0 }
+  .news-list { list-style: none }
+  .news-item {
+    padding: 14px 28px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+    transition: background .2s;
+    cursor: default;
+  }
+  .news-item:last-child { border-bottom: none }
+  .news-item:hover { background: var(--surface-alt) }
+  .news-time {
+    font-size: 12px; color: var(--text-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    min-width: 52px;
+    padding-top: 2px;
+  }
+  .news-dot {
+    width:8px; height:8px; border-radius:50%;
+    background: var(--emerald); flex-shrink:0; margin-top:6px;
+  }
+  .news-dot.hot { background: var(--rose) }
+  .news-content { font-size: 14px; color: var(--text); line-height: 1.5 }
+  .news-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .news-tag.notice  { background: #fef3c7; color: #92400e }
+  .news-tag.policy  { background: #e0f2fe; color: #0369a1 }
+  .news-tag.weather { background: #f3e8ff; color: #7c3aed }
+
+  /* ---- Footer ---- */
+  .footer {
+    text-align: center;
+    padding: 20px 32px 32px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 1024px) {
+    .stat-row { grid-template-columns: repeat(2, 1fr) }
+    .two-col { grid-template-columns: 1fr }
+  }
+  @media (max-width: 640px) {
+    .header { padding: 0 16px }
+    .header-brand { font-size: 16px }
+    .main { padding: 16px 12px 32px; gap: 14px }
+    .stat-row { grid-template-columns: 1fr 1fr; gap: 10px }
+    .stat-card { padding: 16px; gap: 10px }
+    .stat-icon { width: 40px; height: 40px; font-size: 20px; border-radius: 10px }
+    .stat-info .value { font-size: 22px }
+    .chart-box { height: 280px }
+    .flow-grid { grid-template-columns: 1fr }
+    .card-header { padding: 14px 16px }
+    .news-item { padding: 12px 16px }
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== HEADER ====== -->
+<header class="header">
+  <div class="header-brand">
+    <div class="icon">&#9968;</div>
+    <span>张家界 · 智慧文旅监控平台</span>
+  </div>
+  <div class="header-meta">
+    <span class="dot"></span>
+    <span>系统运行中</span>
+    <span id="live-clock" style="font-variant-numeric:tabular-nums">--</span>
+  </div>
+</header>
+
+<!-- ====== MAIN CONTENT ====== -->
+<main class="main">
+
+  <!-- ---- 4 Stat Cards ---- -->
+  <section class="stat-row">
+    <div class="stat-card">
+      <div class="stat-icon green">&#128101;</div>
+      <div class="stat-info">
+        <div class="label">今日累计入园</div>
+        <div class="value" id="stat-total">32,847</div>
+        <div class="sub up">较昨日 &uarr; 12.5%</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon amber">&#127939;</div>
+      <div class="stat-info">
+        <div class="label">当前在园人数</div>
+        <div class="value" id="stat-current">18,562</div>
+        <div class="sub">瞬时峰值 21,340</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon sky">&#9925;</div>
+      <div class="stat-info">
+        <div class="label">今日天气</div>
+        <div class="value" style="font-size:22px">多云 26&deg;C</div>
+        <div class="sub">湿度 72% · 适宜游览</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon rose">&#9888;</div>
+      <div class="stat-info">
+        <div class="label">承载率预警</div>
+        <div class="value" id="stat-load">62%</div>
+        <div class="sub down">黄色预警 · 关注</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- ECharts Visitor Trend ---- -->
+  <section class="card">
+    <div class="card-header">
+      <h2>
+        景区客流趋势
+        <span class="badge">近 24 小时</span>
+      </h2>
+      <div style="display:flex;gap:18px;font-size:12px;color:var(--text-muted)">
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:3px;border-radius:2px;background:var(--emerald);display:inline-block"></span>入园
+        </span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:3px;border-radius:2px;background:var(--rose);display:inline-block"></span>出园
+        </span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:3px;border-radius:2px;background:var(--amber);display:inline-block"></span>在园
+        </span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="chart-box" id="chart-main"></div>
+    </div>
+  </section>
+
+  <!-- ---- Two Column: Flow Simulation + News ---- -->
+  <div class="two-col">
+
+    <!-- Entry/Exit Simulation -->
+    <section class="card flow-panel">
+      <div class="card-header">
+        <h2>实时客流闸机 <span class="badge" style="background:var(--rose-light);color:var(--rose)">LIVE</span></h2>
+        <span style="font-size:12px;color:var(--text-muted)">每 2 秒刷新</span>
+      </div>
+      <div class="card-body">
+        <div class="flow-grid">
+          <div class="flow-item in">
+            <div class="flow-label">&uarr; 入园人数 (本次刷新)</div>
+            <div class="flow-number" id="flow-in">47</div>
+            <div class="flow-unit">人次</div>
+            <div class="flow-bar-wrap"><div class="flow-bar" id="flow-bar-in" style="width:55%"></div></div>
+          </div>
+          <div class="flow-item out">
+            <div class="flow-label">&darr; 出园人数 (本次刷新)</div>
+            <div class="flow-number" id="flow-out">32</div>
+            <div class="flow-unit">人次</div>
+            <div class="flow-bar-wrap"><div class="flow-bar" id="flow-bar-out" style="width:38%"></div></div>
+          </div>
+        </div>
+        <div class="flow-status">
+          <span class="live-dot"></span>
+          闸机数据实时同步中 · 累计今日入园 <strong id="flow-cumulative" style="color:var(--emerald);margin:0 2px">32,847</strong> 人次
+        </div>
+      </div>
+    </section>
+
+    <!-- News Panel -->
+    <section class="card news-panel">
+      <div class="card-header">
+        <h2>文旅资讯 <span class="badge" style="background:var(--rose-light);color:var(--rose)">新</span></h2>
+        <span style="font-size:12px;color:var(--text-muted)">实时推送</span>
+      </div>
+      <div class="card-body">
+        <ul class="news-list" id="news-list">
+          <li class="news-item">
+            <span class="news-time">14:32</span>
+            <span class="news-dot hot"></span>
+            <span class="news-content">
+              <span class="news-tag notice">公告</span>
+              张家界国家森林公园今日入园人数突破 3.2 万，建议游客错峰出行
+            </span>
+          </li>
+          <li class="news-item">
+            <span class="news-time">13:15</span>
+            <span class="news-dot"></span>
+            <span class="news-content">
+              <span class="news-tag policy">政策</span>
+              湖南省文旅厅发布国庆黄金周景区接待应急预案
+            </span>
+          </li>
+          <li class="news-item">
+            <span class="news-time">11:48</span>
+            <span class="news-dot"></span>
+            <span class="news-content">
+              <span class="news-tag weather">天气</span>
+              武陵源区气象局：未来三天以多云为主，气温 22-30&deg;C
+            </span>
+          </li>
+          <li class="news-item">
+            <span class="news-time">10:20</span>
+            <span class="news-dot"></span>
+            <span class="news-content">
+              <span class="news-tag notice">公告</span>
+              天门山索道维护完成，现已恢复正常运营
+            </span>
+          </li>
+          <li class="news-item">
+            <span class="news-time">09:05</span>
+            <span class="news-dot"></span>
+            <span class="news-content">
+              <span class="news-tag policy">政策</span>
+              张家界推出"智慧文旅"小程序，实现一键预约、电子导览
+            </span>
+          </li>
+          <li class="news-item">
+            <span class="news-time">08:00</span>
+            <span class="news-dot"></span>
+            <span class="news-content">
+              <span class="news-tag weather">天气</span>
+              今日景区空气质量指数 42 (优)，日出时间 06:12
+            </span>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="footer">
+  张家界国家森林公园 · 智慧文旅监控平台 &copy; 2025 &nbsp;|&nbsp; 数据来源：景区闸机系统实时上报 &nbsp;|&nbsp; 仅作演示用途
+</footer>
+
+<!-- ====== SCRIPTS ====== -->
+<script>
+(function(){
+  // ──────────────── Live Clock ────────────────
+  const clockEl = document.getElementById('live-clock');
+  function tickClock(){
+    const now = new Date();
+    clockEl.textContent = now.toLocaleString('zh-CN', {
+      year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+    });
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // ──────────────── ECharts ────────────────
+  const chartDom = document.getElementById('chart-main');
+  const chart = echarts.init(chartDom, null, { devicePixelRatio: window.devicePixelRatio || 1 });
+
+  // Generate 24h labels (now back)
+  const hours = [];
+  const now = new Date();
+  for (let i = 23; i >= 0; i--) {
+    const d = new Date(now - i * 3600000);
+    hours.push(d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0'));
+  }
+
+  function genWave(base, amp, len) {
+    const arr = [];
+    for (let i = 0; i < len; i++) {
+      let v = base + amp * Math.sin(i / 3.5) + (Math.random() - 0.5) * amp * 1.4;
+      // day pattern: peak around 10-14h
+      const h = (now.getHours() - 23 + i + 24) % 24;
+      const peak = h >= 9 && h <= 15 ? 1 + 0.6 * Math.sin((h-9)/6 * Math.PI) : 0.4;
+      v *= peak;
+      arr.push(Math.round(Math.max(0, v)));
+    }
+    return arr;
+  }
+
+  const entryData = genWave(2400, 900, 24);
+  const exitData  = genWave(2000, 700, 24);
+  const stayData  = entryData.map((_,i) => {
+    let acc = 0;
+    for (let j = 0; j <= i; j++) acc += entryData[j] - exitData[j];
+    return Math.round(Math.max(5000, acc + 12000));
+  });
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#fff',
+      borderColor: '#e2e8da',
+      textStyle: { color: '#2d3a24', fontSize: 13 },
+      boxShadow: '0 8px 30px rgba(0,0,0,.08)',
+      axisPointer: { type:'cross', crossStyle:{color:'#cbd5c0'} }
+    },
+    legend: { show: false },
+    grid: { left: 48, right: 48, top: 16, bottom: 28 },
+    xAxis: {
+      type: 'category',
+      data: hours,
+      axisLine: { lineStyle:{color:'#d4dcc8'} },
+      axisTick: { show:false },
+      axisLabel: { color:'#9aab8c', fontSize:11, interval: 3 },
+      boundaryGap: false,
+    },
+    yAxis: [
+      {
+        type: 'value',
+        name: '进出 (人次/h)',
+        nameTextStyle: { color:'#9aab8c', fontSize:11 },
+        axisLabel: { color:'#9aab8c', fontSize:11, formatter: function(v){ return v >= 1000 ? (v/1000).toFixed(1)+'k' : v } },
+        splitLine: { lineStyle:{color:'#f0f3ea', type:'dashed'} },
+      },
+      {
+        type: 'value',
+        name: '在园 (人)',
+        nameTextStyle: { color:'#9aab8c', fontSize:11 },
+        axisLabel: { color:'#9aab8c', fontSize:11, formatter: function(v){ return (v/1000).toFixed(0)+'k' } },
+        splitLine: { show:false },
+      }
+    ],
+    series: [
+      {
+        name: '入园', type: 'line', yAxisIndex: 0,
+        data: entryData,
+        smooth: true, symbol: 'circle', symbolSize: 4,
+        lineStyle: { color: '#2d8a4e', width: 2.5 },
+        itemStyle: { color: '#2d8a4e' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0,0,0,1, [
+            { offset:0, color:'rgba(45,138,78,.18)' },
+            { offset:1, color:'rgba(45,138,78,.01)' }
+          ])
+        }
+      },
+      {
+        name: '出园', type: 'line', yAxisIndex: 0,
+        data: exitData,
+        smooth: true, symbol: 'circle', symbolSize: 4,
+        lineStyle: { color: '#e11d48', width: 2.5 },
+        itemStyle: { color: '#e11d48' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0,0,0,1, [
+            { offset:0, color:'rgba(225,29,72,.12)' },
+            { offset:1, color:'rgba(225,29,72,.01)' }
+          ])
+        }
+      },
+      {
+        name: '在园', type: 'line', yAxisIndex: 1,
+        data: stayData,
+        smooth: true, symbol: 'none',
+        lineStyle: { color: '#d97706', width: 2, type: 'dashed' },
+        itemStyle: { color: '#d97706' },
+        areaStyle: { color: 'rgba(217,119,6,.04)' }
+      }
+    ]
+  };
+  chart.setOption(option);
+  window.addEventListener('resize', function(){ chart.resize(); });
+
+  // ──────────────── Entry/Exit Random Simulation ────────────────
+  var elIn  = document.getElementById('flow-in');
+  var elOut = document.getElementById('flow-out');
+  var elBarIn  = document.getElementById('flow-bar-in');
+  var elBarOut = document.getElementById('flow-bar-out');
+  var elCumulative = document.getElementById('flow-cumulative');
+  var elStatTotal = document.getElementById('stat-total');
+  var elStatCurrent = document.getElementById('stat-current');
+  var elStatLoad = document.getElementById('stat-load');
+
+  var cumulative = 32847;
+  var currentInPark = 18562;
+  var MAX_CAPACITY = 30000;
+
+  function randomFlow() {
+    var t = new Date().getHours();
+    // simulate busy hours
+    var baseIn, baseOut;
+    if (t >= 8 && t <= 11)       { baseIn = 70; baseOut = 20 }
+    else if (t >= 12 && t <= 15) { baseIn = 55; baseOut = 50 }
+    else if (t >= 16 && t <= 18) { baseIn = 25; baseOut = 45 }
+    else { baseIn = 8; baseOut = 5 }
+
+    var inFlow  = Math.max(0, Math.round(baseIn  + (Math.random() - 0.5) * 30));
+    var outFlow = Math.max(0, Math.round(baseOut + (Math.random() - 0.5) * 24));
+
+    cumulative += inFlow;
+    currentInPark += (inFlow - outFlow);
+    if (currentInPark < 2000) currentInPark = 2000;
+    if (currentInPark > MAX_CAPACITY * 1.05) currentInPark = Math.round(MAX_CAPACITY * 1.05);
+
+    var loadPct = Math.round(currentInPark / MAX_CAPACITY * 100);
+    var maxFlow = t >= 8 && t <= 15 ? 100 : 50;
+
+    // Animate
+    animateNumber(elIn, inFlow);
+    animateNumber(elOut, outFlow);
+    elBarIn.style.width  = Math.round(inFlow  / maxFlow * 100) + '%';
+    elBarOut.style.width = Math.round(outFlow / maxFlow * 100) + '%';
+    elCumulative.textContent = cumulative.toLocaleString();
+    elStatTotal.textContent = cumulative.toLocaleString();
+    elStatCurrent.textContent = currentInPark.toLocaleString();
+    elStatLoad.textContent = loadPct + '%';
+
+    // Update load card sub
+    var loadCard = document.getElementById('stat-load').closest('.stat-card');
+    var loadSub = loadCard.querySelector('.sub');
+    if (loadPct >= 80) { loadSub.textContent = '红色预警 · 限流'; loadSub.className = 'sub down' }
+    else if (loadPct >= 60) { loadSub.textContent = '黄色预警 · 关注'; loadSub.className = 'sub down' }
+    else { loadSub.textContent = '绿色畅通 · 正常'; loadSub.className = 'sub up' }
+
+    // Also update chart with latest data point (push & shift)
+    updateChartPoint(inFlow, outFlow);
+  }
+
+  function animateNumber(el, target) {
+    var start = parseInt(el.textContent.replace(/,/g,'')) || 0;
+    var duration = 400;
+    var startTime = performance.now();
+    function step(ts) {
+      var p = Math.min((ts - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1-p, 3); // ease-out
+      el.textContent = Math.round(start + (target - start) * eased);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Update chart: push new point, shift oldest
+  function updateChartPoint(inVal, outVal) {
+    var opt = chart.getOption();
+    var inData  = opt.series[0].data.slice(1);
+    var outData = opt.series[1].data.slice(1);
+    var hourLabels = opt.xAxis[0].data.slice(1);
+
+    inData.push(inVal);
+    outData.push(outVal);
+
+    // Recalc stay
+    var stayDataNew = [];
+    var acc = 15000;
+    for (var i = 0; i < inData.length; i++) {
+      acc += inData[i] - outData[i];
+      stayDataNew.push(Math.round(Math.max(5000, acc)));
+    }
+
+    var d = new Date();
+    hourLabels.push(d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0'));
+
+    chart.setOption({
+      xAxis: { data: hourLabels },
+      series: [
+        { data: inData },
+        { data: outData },
+        { data: stayDataNew }
+      ]
+    });
+  }
+
+  // Initial fire
+  randomFlow();
+  setInterval(randomFlow, 2000);
+
+  // ──────────────── News push simulation ────────────────
+  var newsList = document.getElementById('news-list');
+  var newsPool = [
+    { tag:'公告', tagClass:'notice',  text:'景区东门停车场已满，请游客前往南门或西门停车' },
+    { tag:'公告', tagClass:'notice',  text:'金鞭溪景区因水位上涨，部分步道临时封闭' },
+    { tag:'政策', tagClass:'policy',  text:'张家界市文旅局发布暑期旅游安全提示' },
+    { tag:'天气', tagClass:'weather', text:'武陵源核心区午后有短时阵雨，请携带雨具' },
+    { tag:'公告', tagClass:'notice',  text:'袁家界景区观光电梯排队时间约 25 分钟' },
+    { tag:'政策', tagClass:'policy',  text:'"十四五"文旅融合规划将张家界纳入重点支持区域' },
+    { tag:'天气', tagClass:'weather', text:'明日景区日出 06:14，云海概率 65%，适合摄影' },
+    { tag:'公告', tagClass:'notice',  text:'黄石寨索道年度检修延期至下周三完成' },
+    { tag:'政策', tagClass:'policy',  text:'湖南省推出"锦绣潇湘"全域旅游年卡，含张家界景区' },
+    { tag:'天气', tagClass:'weather', text:'景区负氧离子浓度达 12,000 个/cm&sup3;，空气质量极佳' },
+  ];
+
+  var newsIdx = 0;
+  function pushNews() {
+    var item = newsPool[newsIdx % newsPool.length];
+    newsIdx++;
+    var now = new Date();
+    var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    var isHot = Math.random() < 0.25;
+
+    var li = document.createElement('li');
+    li.className = 'news-item';
+    li.style.opacity = '0';
+    li.style.transform = 'translateY(-12px)';
+    li.style.transition = 'opacity .4s, transform .4s';
+    li.innerHTML =
+      '<span class="news-time">' + timeStr + '</span>' +
+      '<span class="news-dot' + (isHot ? ' hot' : '') + '"></span>' +
+      '<span class="news-content">' +
+        '<span class="news-tag ' + item.tagClass + '">' + item.tag + '</span>' +
+        item.text +
+      '</span>';
+
+    newsList.insertBefore(li, newsList.firstChild);
+
+    // Limit to 8 items
+    while (newsList.children.length > 8) {
+      newsList.removeChild(newsList.lastChild);
+    }
+
+    requestAnimationFrame(function(){
+      li.style.opacity = '1';
+      li.style.transform = 'translateY(0)';
+    });
+  }
+
+  // Push news every 8-18 seconds
+  function scheduleNews() {
+    pushNews();
+    setTimeout(scheduleNews, 8000 + Math.random() * 10000);
+  }
+  setTimeout(scheduleNews, 5000); // first push after 5s
+})();
+</script>
+</body>
+</html>
